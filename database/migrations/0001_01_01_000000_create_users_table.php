@@ -22,16 +22,10 @@ return new class extends Migration
             // Roles: admin, warehouseman, user
             $table->enum('role', ['admin', 'warehouseman', 'user'])->default('user');
 
-            // Tipo de Cliente: individual, institutional
             $table->enum('customer_type', ['individual', 'institutional'])->default('individual');
 
             // Identificación (DNI, RUC, Tax ID) para trazabilidad en reportes
             $table->string('tax_id')->nullable()->unique();
-
-            // Datos de contacto/envío para la App
-            $table->string('phone')->nullable();
-            $table->text('address')->nullable();
-            $table->string('city')->nullable();
 
             $table->boolean('active')->default(true);
             $table->rememberToken();

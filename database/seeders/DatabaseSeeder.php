@@ -41,6 +41,15 @@ class DatabaseSeeder extends Seeder
             'tax_id' => '900123456-1',
             'active' => true
         ]);
+        User::create([
+            'name' => 'Alan',
+            'last_name' => 'Olarte Vazquez',
+            'email' => 'dummy@gmail.com',
+            'password' => Hash::make('alan1234'),
+            'role' => 'user',
+            'customer_type' => 'individual',
+            'active' => true
+        ]);
 
         // 2. CREAR UBICACIONES (ESTANTES) CON CAPACIDAD
         $locations = [

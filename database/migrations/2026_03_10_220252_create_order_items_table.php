@@ -15,8 +15,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
             $table->foreignId('book_id')->constrained()->onDelete('cascade');
-            $table->integer('quantity');
-            $table->decimal('price', 10, 2); // Precio al momento de la compra
+
+            $table->integer('quantity'); // Cantidad comprada (ej: 2)
+            $table->decimal('price', 10, 2); // Precio unitario o de paquete al momento de la compra
+
+            // Tipo de compra: unit o package
+            $table->string('buy_type')->default('unit');
+
             $table->timestamps();
         });
     }
