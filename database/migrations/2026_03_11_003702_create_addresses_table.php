@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('postal_code', 10);
             $table->string('state');
             $table->string('municipality'); // Municipio o Delegación
-            $table->string('locality');     // Localidad
+            $table->string('locality');     // ciudad
             $table->string('neighborhood'); // Colonia
 
             // Detalles del Domicilio

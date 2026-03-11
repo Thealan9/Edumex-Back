@@ -20,7 +20,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name', 'last_name', 'email', 'password', 'role',
-        'customer_type', 'tax_id', 'phone', 'address', 'city', 'active'
+        'customer_type', 'tax_id', 'active'
     ];
 
     /**
@@ -60,5 +60,14 @@ class User extends Authenticatable
     public function isWarehouseman(): bool
     {
         return $this->role === 'warehouseman';
+    }
+    public function addresses()
+    {
+        return $this->hasMany(Addresses::class, 'user_id');
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
     }
 }

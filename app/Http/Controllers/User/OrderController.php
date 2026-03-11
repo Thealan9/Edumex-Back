@@ -21,49 +21,56 @@ class OrderController extends Controller
             'items.*.id' => 'required|exists:books,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.buy_type' => 'required|in:unit,package',
-            'address_data' => 'required|array',
-            'address_data.recipient_name' => 'required|string',
-            'address_data.recipient_phone' => 'required|string',
-            'address_data.postal_code' => 'required|string',
-            'address_data.state' => 'required|string',
-            'address_data.municipality' => 'required|string',
-            'address_data.neighborhood' => 'required|string',
-            'address_data.street' => 'required|string',
+            // address_id es obligatorio si no hay address_data
+            'address_id' => 'required_without:address_data|nullable|exists:addresses,id',
+            'address_data' => 'required_without:address_id|nullable|array',
         ]);
 
         return DB::transaction(function () use ($request) {
             $user = $request->user();
             $total = 0;
 
-            // 1. Crear la dirección con salvaguardas para campos vacíos (Evita errores de DB)
-            $address = Addresses::create([
-                'user_id'          => $user->id,
-                'recipient_name'   => $request->address_data['recipient_name'],
-                'recipient_phone'  => $request->address_data['recipient_phone'],
-                'postal_code'      => $request->address_data['postal_code'],
-                'state'            => $request->address_data['state'],
-                'municipality'     => $request->address_data['municipality'],
-                'neighborhood'     => $request->address_data['neighborhood'],
-                'locality'         => $request->address_data['locality'] ?: $request->address_data['neighborhood'],
-                'street'           => $request->address_data['street'],
-                'external_number'  => !empty($request->address_data['external_number']) ? $request->address_data['external_number'] : 'S/N',
-                'internal_number'  => $request->address_data['internal_number'] ?: null,
-                'references'       => $request->address_data['references'] ?: null,
-                'is_default'       => $request->address_data['is_default'] ?? false,
-            ]);
+            // --- MANEJO DE DIRECCIÓN ---
+            if ($request->address_id) {
+                // Caso A: Usar dirección existente
+                $address = Addresses::where('user_id', $user->id)->findOrFail($request->address_id);
+            } else {
+                if ($request->address_data['is_default']) {
+                    // Ponemos todas las direcciones anteriores del usuario en false
+                    Addresses::where('user_id', $user->id)->update(['is_default' => false]);
+                }
+                // Caso B: Crear nueva dirección (Solo se ejecuta si no hay address_id)
+                $address = Addresses::create([
+                    'user_id'          => $user->id,
+                    'recipient_name'   => $request->address_data['recipient_name'],
+                    'recipient_phone'  => $request->address_data['recipient_phone'],
+                    'postal_code'      => $request->address_data['postal_code'],
+                    'state'            => $request->address_data['state'],
+                    'municipality'     => $request->address_data['municipality'],
+                    'locality'         => $request->address_data['locality'] ?: $request->address_data['municipality'], // CIUDAD
+                    'neighborhood'     => $request->address_data['neighborhood'], // COLONIA
+                    'street'           => $request->address_data['street'],
+                    'external_number'  => !empty($request->address_data['external_number']) ? $request->address_data['external_number'] : 'S/N',
+                    'internal_number'  => $request->address_data['internal_number'] ?: null,
+                    'references'       => $request->address_data['references'] ?: null,
+                    'is_default'       => $request->address_data['is_default'],
+                ]);
+            }
 
-            // 2. Crear el Snapshot (La foto fija de la dirección en la orden)
+            // 1. Crear el Snapshot Histórico (Para que la orden nunca cambie)
             $shippingDetails = [
                 'recipient' => $address->recipient_name,
                 'phone' => $address->recipient_phone,
                 'full_address' => "{$address->street} #{$address->external_number}" . ($address->internal_number ? " Int. {$address->internal_number}" : ""),
                 'colonia' => $address->neighborhood,
+                'ciudad' => $address->locality, // <-- Ciudad mapeada correctamente
+                'municipio' => $address->municipality,
+                'estado' => $address->state,
                 'cp' => $address->postal_code,
-                'location' => "{$address->locality}, {$address->municipality}, {$address->state}",
                 'references' => $address->references
             ];
 
-            // 3. Crear la Orden
+            // 2. Crear la Orden
             $order = Order::create([
                 'user_id' => $user->id,
                 'shipping_details' => $shippingDetails,
@@ -71,25 +78,23 @@ class OrderController extends Controller
                 'total'   => 0
             ]);
 
+            // --- PROCESAMIENTO DE ITEMS E INVENTARIO ---
             foreach ($request->items as $item) {
                 $book = Book::findOrFail($item['id']);
 
-                // Validación de Negocio: Individuales no compran paquetes
                 if ($user->customer_type === 'individual' && $item['buy_type'] === 'package') {
                     throw new \Exception("Acceso denegado para compra de paquetes.");
                 }
 
-                // Multiplicador de stock (Trazabilidad real)
                 $unitsToSubtract = ($item['buy_type'] === 'package')
                     ? ($item['quantity'] * ($book->units_per_package ?? 1))
                     : $item['quantity'];
 
                 $pendingToTake = $unitsToSubtract;
 
-                // 4. Lógica de Descuento por Estantes
                 $inventories = Inventory::where('book_id', $book->id)
                     ->where('quantity', '>', 0)
-                    ->orderBy('quantity', 'asc') // Estrategia de optimización de espacio
+                    ->orderBy('quantity', 'asc')
                     ->get();
 
                 if ($inventories->sum('quantity') < $unitsToSubtract) {
@@ -102,7 +107,6 @@ class OrderController extends Controller
                     $take = min($inv->quantity, $pendingToTake);
                     $inv->decrement('quantity', $take);
 
-                    // Auditoría de movimiento
                     InventoryMovement::create([
                         'book_id' => $book->id,
                         'location_id' => $inv->location_id,
@@ -115,7 +119,6 @@ class OrderController extends Controller
                     $pendingToTake -= $take;
                 }
 
-                // 5. Registrar el ítem con precio histórico
                 $price = ($item['buy_type'] === 'package') ? $book->price_package : $book->price_unit;
 
                 OrderItem::create([
@@ -129,7 +132,6 @@ class OrderController extends Controller
                 $total += ($price * $item['quantity']);
             }
 
-            // 6. Finalizar monto total
             $order->update(['total' => $total]);
 
             return response()->json([

@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\BookController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\User\AddressController;
 use App\Http\Controllers\Warehouseman\InventoryController;
 use App\Http\Controllers\Warehouseman\MovementController;
 use Illuminate\Support\Facades\Route;
@@ -45,5 +46,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
     Route::prefix('user')->group(function () {
         Route::post('orders', [App\Http\Controllers\User\OrderController::class, 'store']);
+        Route::get('addresses', [AddressController::class, 'index']);
+        Route::delete('addresses/{id}', [AddressController::class, 'destroy']);
     });
 });
