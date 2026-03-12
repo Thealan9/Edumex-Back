@@ -33,4 +33,16 @@ class Book extends Model
     {
         return $this->inventories()->sum('quantity');
     }
+
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute()
+    {
+        if ($this->image_path) {
+            return asset('storage/' . $this->image_path);
+        }
+
+        return asset('images/default-book.png');
+    }
+
 }

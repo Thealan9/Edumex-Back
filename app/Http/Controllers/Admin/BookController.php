@@ -81,4 +81,30 @@ class BookController extends Controller
             'data' => $book
         ], 200);
     }
+
+    public function updateImage(Request $request, $id)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $book = Book::findOrFail($id);
+
+        if ($request->hasFile('image')) {
+            // Guardar físicamente
+            $path = $request->file('image')->store('books', 'public');
+
+            // ACTUALIZAR EN BASE DE DATOS
+            $book->image_path = $path;
+            $book->save(); // O $book->update(['image_path' => $path]);
+
+            return response()->json([
+                'success' => true,
+                'image_url' => asset('storage/' . $path),
+                'image_path' => $path
+            ]);
+        }
+
+        return response()->json(['success' => false], 400);
+    }
 }

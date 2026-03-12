@@ -30,6 +30,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
         Route::apiResource('locations', LocationController::class);
         Route::apiResource('books', BookController::class);
+        Route::post('books/{id}/image', [BookController::class, 'updateImage']);
         Route::apiResource('discounts', VolumeDiscountController::class);
         Route::get('reports/inventory', [ReportController::class, 'monthlyInventory']);
         Route::get('reports/sales', [ReportController::class, 'salesSummary']);

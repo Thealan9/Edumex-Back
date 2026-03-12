@@ -24,7 +24,7 @@ class CatalogController extends Controller
                 'units_per_package' => $book->units_per_package,
                 'total_stock' => (int)$book->total_stock,
                 'price_unit' => (float)$book->price_unit,
-                'image' => "https://api.tualmacen.com/images/{$book->isbn}.jpg" // Ejemplo
+                'image_url' => $book->image_url,
             ];
         });
 
