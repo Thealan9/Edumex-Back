@@ -15,8 +15,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->json('shipping_details');
-            $table->string('status')->default('completed'); // pending, completed, cancelled
+            $table->string('status')->default('paid'); // pending, completed, cancelled
             $table->decimal('total', 10, 2);
+            $table->string('tracking_number')->nullable();
+            $table->string('tracking_company')->nullable();
+            $table->timestamp('shipped_at')->nullable();
             $table->timestamps();
         });
     }

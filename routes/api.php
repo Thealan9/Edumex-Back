@@ -42,10 +42,14 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::post('inventory/move', [InventoryController::class, 'store']);
         Route::get('movements', [MovementController::class, 'index']);
         Route::get('movements/{id}', [MovementController::class, 'show']);
+
+        Route::get('pending-despatch', [App\Http\Controllers\User\OrderController::class, 'pendingDespatch']);
+        Route::post('orders/{id}/dispatch', [App\Http\Controllers\User\OrderController::class, 'dispatch']);
     });
 
     Route::prefix('user')->group(function () {
         Route::post('orders', [App\Http\Controllers\User\OrderController::class, 'store']);
+        Route::get('my-orders', [App\Http\Controllers\User\OrderController::class, 'myOrders']); // <-- RUTA NUEVA
         Route::get('addresses', [AddressController::class, 'index']);
         Route::delete('addresses/{id}', [AddressController::class, 'destroy']);
     });

@@ -74,7 +74,7 @@ class OrderController extends Controller
             $order = Order::create([
                 'user_id' => $user->id,
                 'shipping_details' => $shippingDetails,
-                'status'  => 'completed',
+                'status'  => 'paid',
                 'total'   => 0
             ]);
 
@@ -141,4 +141,38 @@ class OrderController extends Controller
             ], 201);
         });
     }
+
+    public function myOrders(Request $request)
+    {
+        return Order::with(['items.book'])
+            ->where('user_id', $request->user()->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+    public function pendingDespatch()
+    {
+        return Order::with(['items.book'])
+            ->where('status', 'paid')
+            ->orderBy('created_at', 'asc')
+            ->get();
+    }
+
+    public function dispatch(Request $request, $id)
+    {
+        $request->validate([
+            'tracking_number' => 'required|string',
+            'tracking_company' => 'required|string'
+        ]);
+
+        $order = Order::findOrFail($id);
+        $order->update([
+            'status' => 'shipped',
+            'tracking_number' => $request->tracking_number,
+            'tracking_company' => $request->tracking_company,
+            'shipped_at' => now()
+        ]);
+
+        return response()->json(['message' => 'Guía registrada y pedido enviado']);
+    }
+
 }
