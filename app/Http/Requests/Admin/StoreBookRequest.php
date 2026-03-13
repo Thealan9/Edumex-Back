@@ -21,14 +21,26 @@ class StoreBookRequest extends FormRequest
      */
     public function rules(): array
     {
+        // 1. Si la petición solo contiene 'active', validamos solo eso (para el toggle)
+        if ($this->has('active') && count($this->all()) === 1) {
+            return [
+                'active' => 'required|boolean'
+            ];
+        }
+
+        // 2. Reglas base para Store y Update completo
         return [
             'title'             => 'required|string|max:255',
-            'isbn'              => 'required|string|unique:books,isbn',
+            'isbn'              => [
+                'required',
+                'string',
+                \Illuminate\Validation\Rule::unique('books', 'isbn')->ignore($this->book)
+            ],
             'level'             => 'required|in:A1,A2,B1,B2,C1,C2',
             'cost'              => 'required|numeric|min:0',
-            'price_unit'        => 'required|numeric|min:0',
+            'price_unit'        => 'required|numeric|min:1',
             'units_per_package' => 'required|integer|min:1',
-            'price_package'     => 'nullable|numeric|min:0',
+            'price_package'     => 'nullable|numeric|min:1',
             'autor'             => 'required|string',
             'pages'             => 'required|integer',
             'year'              => 'required|integer',
@@ -36,7 +48,9 @@ class StoreBookRequest extends FormRequest
             'format'            => 'required|in:Bolsillo,Tapa Blanda,Tapa Dura',
             'size'              => 'required|string',
             'supplier'          => 'required|string',
-            'description'       => 'required|string|max:255',
+            'description'       => 'nullable|string|max:255',
+            'category'          => 'required|in:General English,Grammar & Vocabulary,Exam Preparation,Business English,Readers,Teacher Resources',
+            'active'            => 'nullable|boolean',
         ];
     }
 }

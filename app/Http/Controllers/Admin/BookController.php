@@ -64,16 +64,9 @@ class BookController extends Controller
     }
 
     // Actualizar (Cambio de costo/precio manual)
-    public function update(Request $request, Book $book)
+    public function update(StoreBookRequest $request, Book $book)
     {
-        // Validación rápida para actualización
-        $data = $request->validate([
-            'cost' => 'numeric',
-            'price_unit' => 'numeric',
-            'active' => 'boolean'
-        ]);
-
-        $book->update($data);
+        $book->update($request->validated());
 
         return response()->json([
             'success' => true,
