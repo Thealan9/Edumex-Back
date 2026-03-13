@@ -55,6 +55,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::post('orders', [App\Http\Controllers\User\OrderController::class, 'store']);
         Route::get('my-orders', [App\Http\Controllers\User\OrderController::class, 'myOrders']); // <-- RUTA NUEVA
         Route::get('addresses', [AddressController::class, 'index']);
+        Route::post('addresses', [AddressController::class, 'store']);
+        Route::put('addresses/{id}', [AddressController::class, 'update']);
         Route::delete('addresses/{id}', [AddressController::class, 'destroy']);
     });
 });
