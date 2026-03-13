@@ -23,7 +23,7 @@ class StoreMovementRequest extends FormRequest
     {
         return [
             'book_id'     => 'required|exists:books,id',
-            'location_id' => 'required|exists:locations,id',
+            'location_id' => 'nullable|exists:locations,id',
             'type'        => 'required|in:input,output,adjustment,return',
             'quantity'    => 'required|integer|min:1',
             'description' => 'required|string|max:255',

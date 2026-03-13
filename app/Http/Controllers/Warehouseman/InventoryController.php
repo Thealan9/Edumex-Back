@@ -80,4 +80,11 @@ class InventoryController extends Controller
             ], 201);
         });
     }
+
+    public function index()
+    {
+        return InventoryMovement::with(['book', 'user', 'location'])
+            ->latest()
+            ->paginate(20);
+    }
 }

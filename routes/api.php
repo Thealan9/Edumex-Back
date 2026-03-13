@@ -41,6 +41,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('locations', [LocationController::class, 'index']);
 
         Route::post('inventory/move', [InventoryController::class, 'store']);
+        Route::get('inventory/history', [InventoryController::class, 'index']);
         Route::get('movements', [MovementController::class, 'index']);
         Route::get('movements/{id}', [MovementController::class, 'show']);
 
