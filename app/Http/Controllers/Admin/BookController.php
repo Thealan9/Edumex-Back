@@ -9,7 +9,6 @@ use Illuminate\Database\QueryException;
 
 class BookController extends Controller
 {
-    // Listar libros con opción de búsqueda básica
     public function index(Request $request)
     {
         $books = Book::when($request->search, function ($query, $search) {
@@ -23,7 +22,6 @@ class BookController extends Controller
         ], 200);
     }
 
-    // Guardar un nuevo libro
     public function store(StoreBookRequest $request)
     {
         try {
@@ -36,7 +34,6 @@ class BookController extends Controller
             ], 201);
 
         } catch (QueryException $e) {
-            // Error 409 si hay un conflicto inesperado (ej. ISBN duplicado que saltó el request)
             return response()->json([
                 'success' => false,
                 'message' => 'Conflicto al registrar el libro. Verifique los datos.',
@@ -45,7 +42,6 @@ class BookController extends Controller
         }
     }
 
-    // Ver detalle de un libro
     public function show($id)
     {
         $book = Book::find($id);
@@ -63,7 +59,6 @@ class BookController extends Controller
         ], 200);
     }
 
-    // Actualizar (Cambio de costo/precio manual)
     public function update(StoreBookRequest $request, Book $book)
     {
         $book->update($request->validated());
@@ -84,12 +79,10 @@ class BookController extends Controller
         $book = Book::findOrFail($id);
 
         if ($request->hasFile('image')) {
-            // Guardar físicamente
             $path = $request->file('image')->store('books', 'public');
 
-            // ACTUALIZAR EN BASE DE DATOS
             $book->image_path = $path;
-            $book->save(); // O $book->update(['image_path' => $path]);
+            $book->save();
 
             return response()->json([
                 'success' => true,

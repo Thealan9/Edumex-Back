@@ -19,17 +19,15 @@ class InventoryController extends Controller
             $location = Location::lockForUpdate()->find($data['location_id']);
             $book = Book::find($data['book_id']);
 
-            // 1. VALIDACIÓN DE CAPACIDAD (Solo si es entrada 'input' o 'return')
             if (in_array($data['type'], ['input', 'return'])) {
                 if (!$location->hasSpaceFor($data['quantity'])) {
                     return response()->json([
                         'success' => false,
                         'message' => "Capacidad insuficiente en el estante {$location->code}. Espacio disponible: " . ($location->max_capacity - $location->current_capacity)
-                    ], 409); // Conflict
+                    ], 409);
                 }
             }
 
-            // 2. VALIDACIÓN DE STOCK (Solo si es salida 'output')
             if ($data['type'] === 'output') {
                 $currentStock = Inventory::where('book_id', $data['book_id'])
                     ->where('location_id', $data['location_id'])
@@ -39,21 +37,19 @@ class InventoryController extends Controller
                     return response()->json([
                         'success' => false,
                         'message' => "Stock insuficiente en esta ubicación para realizar la salida."
-                    ], 422); // Unprocessable Entity
+                    ], 422);
                 }
             }
 
-            // 3. REGISTRAR MOVIMIENTO (Trazabilidad)
             $movement = InventoryMovement::create([
                 'book_id'     => $data['book_id'],
-                'user_id'     => auth()->id(), // El ID del Warehouseman logueado
+                'user_id'     => auth()->id(),
                 'location_id' => $data['location_id'],
                 'type'        => $data['type'],
                 'quantity'    => $data['quantity'],
                 'description' => $data['description']
             ]);
 
-            // 4. ACTUALIZAR TABLA DE INVENTARIO Y CAPACIDAD
             $inventory = Inventory::firstOrNew([
                 'book_id'     => $data['book_id'],
                 'location_id' => $data['location_id']

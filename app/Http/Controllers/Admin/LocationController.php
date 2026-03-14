@@ -8,7 +8,7 @@ use App\Http\Requests\Admin\StoreLocationRequest;
 
 class LocationController extends Controller
 {
-    // Listar todos los estantes con su estado de llenado
+
     public function index()
     {
         $locations = Location::withSum('inventories as current_capacity', 'quantity')->get();
@@ -18,7 +18,7 @@ class LocationController extends Controller
         ], 200);
     }
 
-    // Crear un nuevo estante/ubicación
+
     public function store(StoreLocationRequest $request)
     {
         try {

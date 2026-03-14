@@ -18,16 +18,13 @@ class ReportController extends Controller
         $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
-        // Traemos todos los libros con sus movimientos previos y actuales
         $report = Book::all()->map(function($book) use ($startDate, $endDate) {
 
-            // Stock Inicial: Movimientos antes de la fecha de inicio
             $stockInicial = $book->movements()
                 ->where('created_at', '<', $startDate)
                 ->selectRaw("SUM(CASE WHEN type IN ('input', 'return') THEN quantity ELSE -quantity END) as total")
                 ->value('total') ?? 0;
 
-            // Movimientos dentro del rango (entradas y salidas)
             $movimientosMes = $book->movements()
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->get();
@@ -58,7 +55,6 @@ class ReportController extends Controller
 
     public function salesSummary()
     {
-        // Reporte rápido de ventas por tipo de cliente (Institucional vs Persona)
         $sales = DB::table('inventory_movements')
             ->join('users', 'inventory_movements::user_id', '=', 'users.id')
             ->where('inventory_movements.type', 'output')

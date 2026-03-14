@@ -13,7 +13,6 @@ class CatalogController extends Controller
         $books = Book::where('active', true)->get();
 
         $discounts = VolumeDiscount::orderBy('min_quantity', 'asc')->get();
-        // Mapeamos para que la App de Ionic reciba el precio ya procesado
         $catalog = $books->map(function ($book) {
             return [
                 'id' => $book->id,

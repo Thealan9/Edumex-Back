@@ -11,7 +11,6 @@ class UserController extends Controller
 {
     public function index()
     {
-        // Añadimos customer_type y tax_id a la selección para el front
         return response()->json(
             User::select('id', 'name', 'last_name', 'email', 'role', 'customer_type', 'tax_id', 'active', 'created_at')
                 ->orderBy('created_at', 'desc')
@@ -28,7 +27,7 @@ class UserController extends Controller
             'password'      => 'required|min:8',
             'role'          => 'required|in:admin,user,warehouseman',
             'customer_type' => 'required|in:individual,institutional',
-            'tax_id'        => 'nullable|string|unique:users,tax_id', // DNI/RUC para instituciones
+            'tax_id'        => 'nullable|string|unique:users,tax_id',
             'active'        => 'boolean'
         ]);
 
@@ -69,7 +68,6 @@ class UserController extends Controller
 
     public function show($id)
     {
-        // Usamos findOrFail para asegurar que devuelva 404 si no existe
         return response()->json(User::findOrFail($id));
     }
 

@@ -13,12 +13,12 @@ class MovementController extends Controller
     public function index(Request $request)
     {
         $movements = InventoryMovement::with(['book:id,title,isbn', 'location:id,code'])
-            ->where('user_id', auth()->id()) // Solo ve lo que él ha hecho
+            ->where('user_id', auth()->id())
             ->when($request->type, function ($query, $type) {
-                $query->where('type', $type); // Filtrar por 'input' o 'output'
+                $query->where('type', $type);
             })
             ->orderBy('created_at', 'desc')
-            ->paginate(15); // Paginación para que la App de Ionic no se sature
+            ->paginate(15);
 
         return response()->json([
             'success' => true,

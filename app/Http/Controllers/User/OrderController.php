@@ -21,7 +21,6 @@ class OrderController extends Controller
             'items.*.id' => 'required|exists:books,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.buy_type' => 'required|in:unit,package',
-            // address_id es obligatorio si no hay address_data
             'address_id' => 'required_without:address_data|nullable|exists:addresses,id',
             'address_data' => 'required_without:address_id|nullable|array',
         ]);
@@ -30,16 +29,12 @@ class OrderController extends Controller
             $user = $request->user();
             $total = 0;
 
-            // --- MANEJO DE DIRECCIÓN ---
             if ($request->address_id) {
-                // Caso A: Usar dirección existente
                 $address = Addresses::where('user_id', $user->id)->findOrFail($request->address_id);
             } else {
                 if ($request->address_data['is_default']) {
-                    // Ponemos todas las direcciones anteriores del usuario en false
                     Addresses::where('user_id', $user->id)->update(['is_default' => false]);
                 }
-                // Caso B: Crear nueva dirección (Solo se ejecuta si no hay address_id)
                 $address = Addresses::create([
                     'user_id'          => $user->id,
                     'recipient_name'   => $request->address_data['recipient_name'],
@@ -47,8 +42,8 @@ class OrderController extends Controller
                     'postal_code'      => $request->address_data['postal_code'],
                     'state'            => $request->address_data['state'],
                     'municipality'     => $request->address_data['municipality'],
-                    'locality'         => $request->address_data['locality'] ?: $request->address_data['municipality'], // CIUDAD
-                    'neighborhood'     => $request->address_data['neighborhood'], // COLONIA
+                    'locality'         => $request->address_data['locality'] ?: $request->address_data['municipality'],
+                    'neighborhood'     => $request->address_data['neighborhood'],
                     'street'           => $request->address_data['street'],
                     'external_number'  => !empty($request->address_data['external_number']) ? $request->address_data['external_number'] : 'S/N',
                     'internal_number'  => $request->address_data['internal_number'] ?: null,
@@ -57,20 +52,18 @@ class OrderController extends Controller
                 ]);
             }
 
-            // 1. Crear el Snapshot Histórico (Para que la orden nunca cambie)
             $shippingDetails = [
                 'recipient' => $address->recipient_name,
                 'phone' => $address->recipient_phone,
                 'full_address' => "{$address->street} #{$address->external_number}" . ($address->internal_number ? " Int. {$address->internal_number}" : ""),
                 'colonia' => $address->neighborhood,
-                'ciudad' => $address->locality, // <-- Ciudad mapeada correctamente
+                'ciudad' => $address->locality,
                 'municipio' => $address->municipality,
                 'estado' => $address->state,
                 'cp' => $address->postal_code,
                 'references' => $address->references
             ];
 
-            // 2. Crear la Orden
             $order = Order::create([
                 'user_id' => $user->id,
                 'shipping_details' => $shippingDetails,
@@ -78,7 +71,6 @@ class OrderController extends Controller
                 'total'   => 0
             ]);
 
-            // --- PROCESAMIENTO DE ITEMS E INVENTARIO ---
             foreach ($request->items as $item) {
                 $book = Book::findOrFail($item['id']);
 

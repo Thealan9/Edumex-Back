@@ -17,7 +17,6 @@ class VolumeDiscountController extends Controller
 
     public function store(StoreDiscountRequest $request)
     {
-        // Validar que no haya solapamiento de rangos (Opcional pero recomendado)
         $exists = VolumeDiscount::where('min_quantity', $request->min_quantity)
             ->where('is_institutional', $request->is_institutional)
             ->exists();

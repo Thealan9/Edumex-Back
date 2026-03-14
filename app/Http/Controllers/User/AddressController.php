@@ -10,7 +10,6 @@ class AddressController extends Controller
 {
     public function index(Request $request)
     {
-        // Retorna todas las direcciones del usuario logueado
         return response()->json($request->user()->addresses()->latest()->get());
     }
     public function store(Request $request)
