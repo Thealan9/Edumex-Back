@@ -10,6 +10,7 @@ use App\Http\Controllers\Warehouseman\InventoryController;
 use App\Http\Controllers\Warehouseman\MovementController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\VolumeDiscountController;
+use App\Http\Controllers\Admin\PurchaseOrderController;
 use Illuminate\Http\Request;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -34,6 +35,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::apiResource('discounts', VolumeDiscountController::class);
         Route::get('reports/inventory', [ReportController::class, 'monthlyInventory']);
         Route::get('reports/sales', [ReportController::class, 'salesSummary']);
+        Route::post('purchase-orders', [PurchaseOrderController::class, 'store']);
+        Route::get('purchase-orders', [PurchaseOrderController::class, 'index']);
     });
 
     Route::prefix('warehouseman')->middleware('role:warehouseman')->group(function () {
@@ -47,6 +50,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
         Route::get('pending-despatch', [App\Http\Controllers\User\OrderController::class, 'pendingDespatch']);
         Route::post('orders/{id}/dispatch', [App\Http\Controllers\User\OrderController::class, 'dispatch']);
+        Route::get('pending-purchases', [PurchaseOrderController::class, 'pendingForWarehouse']);
     });
 
     Route::prefix('user')->group(function () {
@@ -54,7 +58,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::put('/users/{user}/change-password', [UserController::class, 'changePassword']);
 
         Route::post('orders', [App\Http\Controllers\User\OrderController::class, 'store']);
-        Route::get('my-orders', [App\Http\Controllers\User\OrderController::class, 'myOrders']); // <-- RUTA NUEVA
+        Route::get('my-orders', [App\Http\Controllers\User\OrderController::class, 'myOrders']);
         Route::get('addresses', [AddressController::class, 'index']);
         Route::post('addresses', [AddressController::class, 'store']);
         Route::put('addresses/{id}', [AddressController::class, 'update']);

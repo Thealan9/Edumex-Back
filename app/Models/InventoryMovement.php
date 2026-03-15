@@ -8,7 +8,7 @@ class InventoryMovement extends Model
 {
     protected $fillable = [
         'book_id', 'user_id', 'location_id',
-        'type', 'quantity', 'description'
+        'type', 'quantity', 'description','reference_id','reference_type'
     ];
 
     public function book()

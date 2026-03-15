@@ -19,14 +19,15 @@ class StoreMovementRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
-    {
+    public function rules() {
         return [
-            'book_id'     => 'required|exists:books,id',
-            'location_id' => 'nullable|exists:locations,id',
-            'type'        => 'required|in:input,output,adjustment,return',
-            'quantity'    => 'required|integer|min:1',
-            'description' => 'required|string|max:255',
+            'book_id'        => 'required|exists:books,id',
+            'location_id'    => 'required|exists:locations,id',
+            'type'           => 'required|in:input,output,adjustment,return',
+            'quantity'       => 'required|integer|min:1',
+            'description'    => 'required|string|min:5',
+            'reference_id'   => 'nullable|integer',
+            'reference_type' => 'nullable|string'
         ];
     }
 }
