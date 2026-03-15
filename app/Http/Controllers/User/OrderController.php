@@ -97,7 +97,10 @@ class OrderController extends Controller
                     if ($pendingToTake <= 0) break;
 
                     $take = min($inv->quantity, $pendingToTake);
+
                     $inv->decrement('quantity', $take);
+
+                    \App\Models\Location::where('id', $inv->location_id)->decrement('current_capacity', $take);
 
                     InventoryMovement::create([
                         'book_id' => $book->id,
