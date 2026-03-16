@@ -34,4 +34,16 @@ class CatalogController extends Controller
             'global_discounts' => $discounts
         ], 200);
     }
+
+    public function show($id)
+    {
+        $book = Book::findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $book,
+            'total_stock' => (int)$book->total_stock,
+        ]);
+    }
+
 }
