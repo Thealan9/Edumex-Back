@@ -19,6 +19,13 @@ class PurchaseOrderController extends Controller
 
         return response()->json($orders);
     }
+    public function pendingDispatches()
+    {
+        $orders = PurchaseOrder::with(['items.book'])
+            ->where('status', 'pending')
+            ->latest()
+            ->get();
+    }
 
     public function store(Request $request) {
         return DB::transaction(function () use ($request) {

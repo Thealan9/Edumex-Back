@@ -6,6 +6,7 @@ use App\Models\Book;
 use App\Models\Location;
 use App\Models\Inventory;
 use App\Models\InventoryMovement;
+use App\Models\Output_orders;
 use App\Models\PurchaseOrder;
 use App\Http\Requests\Warehouseman\StoreMovementRequest;
 use Illuminate\Support\Facades\DB;
@@ -78,22 +79,27 @@ class InventoryController extends Controller
                 if ($po) {
                     $receivedTotals = InventoryMovement::where('reference_id', $po->id)
                         ->where('reference_type', 'purchase_order')
-                        ->select('book_id', DB::raw('SUM(quantity) as total_received'))
+                        ->select('book_id', DB::raw('SUM(quantity) as total'))
                         ->groupBy('book_id')
-                        ->get()
-                        ->pluck('total_received', 'book_id');
+                        ->get()->pluck('total', 'book_id');
 
-                    $isFullyReceived = true;
-                    foreach ($po->items as $item) {
-                        $receivedAmount = $receivedTotals[$item->book_id] ?? 0;
-                        if ($receivedAmount < $item->quantity) {
-                            $isFullyReceived = false;
-                            break;
-                        }
-                    }
-
-                    if ($isFullyReceived) {
+                    if ($this->isOrderComplete($po, $receivedTotals)) {
                         $po->update(['status' => 'received']);
+                    }
+                }
+            }
+
+            if (($data['reference_type'] ?? null) === 'output_order' && ($data['reference_id'] ?? null)) {
+                $oo = Output_orders::with('items')->find($data['reference_id']);
+                if ($oo) {
+                    $withdrawnTotals = InventoryMovement::where('reference_id', $oo->id)
+                        ->where('reference_type', 'output_order')
+                        ->select('book_id', DB::raw('SUM(quantity) as total'))
+                        ->groupBy('book_id')
+                        ->get()->pluck('total', 'book_id');
+
+                    if ($this->isOrderComplete($oo, $withdrawnTotals)) {
+                        $oo->update(['status' => 'processed']);
                     }
                 }
             }
@@ -102,11 +108,43 @@ class InventoryController extends Controller
                 'success' => true,
                 'message' => 'Movimientos procesados con éxito',
                 'data' => [
-                    'movements' => $movements,
-                    'is_po_closed' => isset($po) ? ($po->status === 'received') : null
+                    'movements' => $movements
                 ]
             ], 201);
         });
+    }
+
+    private function isOrderComplete($order, $totals)
+    {
+        foreach ($order->items as $item) {
+            $currentAmount = $totals[$item->book_id] ?? 0;
+            if ($currentAmount < $item->quantity) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public function getLocationsByBook($book_id)
+    {
+        $locations = Inventory::where('book_id', $book_id)
+            ->where('quantity', '>', 0)
+            ->with('location')
+            ->get()
+            ->map(function($inv) {
+                return [
+                    'id' => $inv->location->id,
+                    'code' => $inv->location->code,
+                    'current_stock' => $inv->quantity,
+                    'max_capacity' => $inv->location->max_capacity,
+                    'current_capacity' => $inv->location->current_capacity
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $locations
+        ]);
     }
 
     public function index()

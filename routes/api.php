@@ -37,7 +37,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('reports/inventory', [ReportController::class, 'monthlyInventory']);
         Route::get('reports/sales', [ReportController::class, 'salesSummary']);
         Route::post('purchase-orders', [PurchaseOrderController::class, 'store']);
-        Route::get('purchase-orders', [PurchaseOrderController::class, 'index']);
+        Route::post('output-orders', [App\Http\Controllers\Admin\OutputOrderController::class, 'store']);
     });
 
     Route::prefix('warehouseman')->middleware('role:warehouseman')->group(function () {
@@ -52,6 +52,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('pending-despatch', [App\Http\Controllers\User\OrderController::class, 'pendingDespatch']);
         Route::post('orders/{id}/dispatch', [App\Http\Controllers\User\OrderController::class, 'dispatch']);
         Route::get('pending-purchases', [PurchaseOrderController::class, 'pendingForWarehouse']);
+        Route::get('pending-outputs', [App\Http\Controllers\Warehouseman\OutputOrderController::class, 'pending']);
+        Route::get('books-locations/{book_id}', [InventoryController::class, 'getLocationsByBook']);
     });
 
     Route::prefix('user')->group(function () {
