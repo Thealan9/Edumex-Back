@@ -11,7 +11,8 @@ class OrderItem extends Model
         'book_id',
         'quantity',
         'price',
-        'buy_type'
+        'buy_type',
+        'discount',
     ];
 
     public function order()
@@ -19,7 +20,6 @@ class OrderItem extends Model
         return $this->belongsTo(Order::class);
     }
 
-    // Relación con el libro
     public function book()
     {
         return $this->belongsTo(Book::class);

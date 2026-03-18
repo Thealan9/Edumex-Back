@@ -12,7 +12,6 @@ class CatalogController extends Controller
     {
         $books = Book::where('active', true)->get();
 
-        $discounts = VolumeDiscount::orderBy('min_quantity', 'asc')->get();
         $catalog = $books->map(function ($book) {
             return [
                 'id' => $book->id,
@@ -31,7 +30,6 @@ class CatalogController extends Controller
         return response()->json([
             'success' => true,
             'data' => $catalog,
-            'global_discounts' => $discounts
         ], 200);
     }
 
@@ -44,6 +42,16 @@ class CatalogController extends Controller
             'data' => $book,
             'total_stock' => (int)$book->total_stock,
         ]);
+    }
+
+    public function discounts(Request $request){
+        $isInstitutional = $request->user()->customer_type === 'institutional';
+
+        $rules = VolumeDiscount::where('is_institutional', $isInstitutional)
+            ->orderBy('min_quantity', 'asc')
+            ->get();
+
+        return response()->json($rules);
     }
 
 }

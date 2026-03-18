@@ -27,7 +27,12 @@ class OrderController extends Controller
 
         return DB::transaction(function () use ($request) {
             $user = $request->user();
-            $total = 0;
+            $subtotal = 0;
+            $totalDiscount = 0;
+
+            $discounts = \App\Models\VolumeDiscount::where('is_institutional', ($user->customer_type === 'institutional'))
+                ->orderBy('min_quantity', 'asc')
+                ->get();
 
             if ($request->address_id) {
                 $address = Addresses::where('user_id', $user->id)->findOrFail($request->address_id);
@@ -65,10 +70,13 @@ class OrderController extends Controller
             ];
 
             $order = Order::create([
-                'user_id' => $user->id,
+                'user_id'          => $user->id,
                 'shipping_details' => $shippingDetails,
-                'status'  => 'paid',
-                'total'   => 0
+                'status'           => 'paid',
+                'subtotal'         => 0,
+                'discount'         => 0,
+                'shipping_cost'    => 0,
+                'total'            => 0
             ]);
 
             foreach ($request->items as $item) {
@@ -82,8 +90,6 @@ class OrderController extends Controller
                     ? ($item['quantity'] * ($book->units_per_package ?? 1))
                     : $item['quantity'];
 
-                $pendingToTake = $unitsToSubtract;
-
                 $inventories = Inventory::where('book_id', $book->id)
                     ->where('quantity', '>', 0)
                     ->orderBy('quantity', 'asc')
@@ -93,13 +99,11 @@ class OrderController extends Controller
                     throw new \Exception("Stock insuficiente para: {$book->title}. Se requieren {$unitsToSubtract} unidades.");
                 }
 
+                $pendingToTake = $unitsToSubtract;
                 foreach ($inventories as $inv) {
                     if ($pendingToTake <= 0) break;
-
                     $take = min($inv->quantity, $pendingToTake);
-
                     $inv->decrement('quantity', $take);
-
                     \App\Models\Location::where('id', $inv->location_id)->decrement('current_capacity', $take);
 
                     InventoryMovement::create([
@@ -114,25 +118,49 @@ class OrderController extends Controller
                     $pendingToTake -= $take;
                 }
 
-                $price = ($item['buy_type'] === 'package') ? $book->price_package : $book->price_unit;
+                $unitPrice = ($item['buy_type'] === 'package') ? $book->price_package : $book->price_unit;
+                $itemSubtotal = $unitPrice * $item['quantity'];
+
+                $itemDiscount = 0;
+                if ($item['buy_type'] === 'unit') {
+                    $applicableDiscount = $discounts->first(function ($d) use ($item) {
+                        return $item['quantity'] >= $d->min_quantity &&
+                            (is_null($d->max_quantity) || $item['quantity'] <= $d->max_quantity);
+                    });
+
+                    if ($applicableDiscount) {
+                        $itemDiscount = $itemSubtotal * ($applicableDiscount->discount_percentage / 100);
+                    }
+                }
 
                 OrderItem::create([
                     'order_id' => $order->id,
                     'book_id'  => $book->id,
                     'quantity' => $item['quantity'],
-                    'price'    => $price,
+                    'price'    => $unitPrice,
+                    'discount' => $itemDiscount,
                     'buy_type' => $item['buy_type']
                 ]);
 
-                $total += ($price * $item['quantity']);
+                $subtotal += $itemSubtotal;
+                $totalDiscount += $itemDiscount;
             }
 
-            $order->update(['total' => $total]);
+            $amountAfterDiscount = $subtotal - $totalDiscount;
+            $shippingCost = ($amountAfterDiscount >= 299) ? 0 : 129;
+            $finalTotal = $amountAfterDiscount + $shippingCost;
+
+            $order->update([
+                'subtotal'      => $subtotal,
+                'discount'      => $totalDiscount,
+                'shipping_cost' => $shippingCost,
+                'total'         => $finalTotal
+            ]);
 
             return response()->json([
                 'success' => true,
                 'message' => '¡Compra procesada con éxito!',
-                'order' => $order
+                'order'   => $order->load('items.book')
             ], 201);
         });
     }

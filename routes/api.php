@@ -59,6 +59,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::prefix('user')->group(function () {
         Route::apiResource('users', UserController::class);
         Route::put('/users/{user}/change-password', [UserController::class, 'changePassword']);
+        Route::get('discounts', [App\Http\Controllers\User\CatalogController::class, 'discounts']);
 
         Route::post('orders', [App\Http\Controllers\User\OrderController::class, 'store']);
         Route::get('my-orders', [App\Http\Controllers\User\OrderController::class, 'myOrders']);

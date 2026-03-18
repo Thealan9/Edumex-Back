@@ -8,7 +8,8 @@ class Order extends Model
 {
     protected $fillable = ['user_id','shipping_details',
         'status', 'total','tracking_number',
-        'tracking_company','shipped_at'];
+        'tracking_company','shipped_at',
+        'subtotal','discount','shipping_cost', ];
 
     protected $casts = [
         'shipping_details' => 'array',
