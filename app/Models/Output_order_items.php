@@ -9,7 +9,8 @@ class Output_order_items extends Model
     protected $fillable = [
         'output_order_id',
         'book_id',
-        'quantity'
+        'quantity',
+        'location_id',
     ];
 
     public function order()

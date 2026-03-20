@@ -19,6 +19,7 @@ class OutputOrderController extends Controller
             'notes'       => 'nullable|string',
             'items'       => 'required|array|min:1',
             'items.*.book_id'  => 'required|exists:books,id',
+            'items.*.location_id'=> 'required|exists:locations,id',
             'items.*.quantity' => 'required|integer|min:1',
         ]);
 
@@ -38,6 +39,7 @@ class OutputOrderController extends Controller
                 Output_order_items::create([
                     'output_order_id' => $order->id,
                     'book_id'         => $item['book_id'],
+                    'location_id'     => $item['location_id'],
                     'quantity'        => $item['quantity'],
                 ]);
             }
