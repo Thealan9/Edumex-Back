@@ -11,7 +11,8 @@ class PurchaseOrderItem extends Model
         'purchase_order_id',
         'book_id',
         'quantity',
-        'unit_cost'
+        'unit_cost',
+        'status',
     ];
 
     public function book(): BelongsTo

@@ -11,6 +11,7 @@ class Output_order_items extends Model
         'book_id',
         'quantity',
         'location_id',
+        'status',
     ];
 
     public function order()

@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('output_order_items', function (Blueprint $table) {
-            $table->foreignId('location_id')->nullable()->constrained('locations')->onDelete('cascade');        });
+            $table->string('status')->default('pending');
+        });
     }
 
     /**
@@ -21,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('output_order_items', function (Blueprint $table) {
-            //
+            $table->dropColumn('status')->default('pending');
         });
     }
 };

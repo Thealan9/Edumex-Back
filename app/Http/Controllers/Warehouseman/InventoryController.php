@@ -6,9 +6,11 @@ use App\Models\Book;
 use App\Models\Location;
 use App\Models\Inventory;
 use App\Models\InventoryMovement;
+use App\Models\Output_order_items;
 use App\Models\Output_orders;
 use App\Models\PurchaseOrder;
 use App\Http\Requests\Warehouseman\StoreMovementRequest;
+use App\Models\PurchaseOrderItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 class InventoryController extends Controller
@@ -20,6 +22,7 @@ class InventoryController extends Controller
             'type' => 'required|in:input,output,adjustment,return',
             'description' => 'required|string',
             'reference_id' => 'nullable|integer',
+            'item_id' => 'required|integer',
             'reference_type' => 'nullable|string',
             'distributions' => 'required|array|min:1',
             'distributions.*.location_id' => 'required|exists:locations,id',
@@ -82,8 +85,13 @@ class InventoryController extends Controller
                         ->select('book_id', DB::raw('SUM(quantity) as total'))
                         ->groupBy('book_id')
                         ->get()->pluck('total', 'book_id');
+                    PurchaseOrderItem::where('id', $data['item_id'])->update(['status' => 'completed']);
 
-                    if ($this->isOrderComplete($po, $receivedTotals)) {
+                    $hasPendingItems = PurchaseOrderItem::where('purchase_order_id', $po->id)
+                        ->where('status', '!=', 'completed')
+                        ->exists();
+
+                    if (!$hasPendingItems) {
                         $po->update(['status' => 'received']);
                     }
                 }
@@ -97,8 +105,13 @@ class InventoryController extends Controller
                         ->select('book_id', DB::raw('SUM(quantity) as total'))
                         ->groupBy('book_id')
                         ->get()->pluck('total', 'book_id');
+                    Output_order_items::where('id', $data['item_id'])->update(['status' => 'completed']);
 
-                    if ($this->isOrderComplete($oo, $withdrawnTotals)) {
+                    $hasPendingOutputs = Output_order_items::where('output_order_id', $oo->id)
+                        ->where('status', '!=', 'completed')
+                        ->exists();
+
+                    if (!$hasPendingOutputs) {
                         $oo->update(['status' => 'processed']);
                     }
                 }
