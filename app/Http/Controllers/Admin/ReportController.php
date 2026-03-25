@@ -7,7 +7,6 @@ use App\Models\InventoryMovement;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-
 class ReportController extends Controller
 {
     public function monthlyInventory(Request $request)
@@ -63,5 +62,45 @@ class ReportController extends Controller
             ->get();
 
         return response()->json(['success' => true, 'data' => $sales]);
+    }
+    public function getFinancialReport(Request $request)
+    {
+        $month = $request->query('month', date('m'));
+        $year = $request->query('year', date('Y'));
+
+        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+
+        $sales = DB::table('order_items')
+            ->join('books', 'order_items.book_id', '=', 'books.id')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->where('orders.status', 'paid')
+            ->whereBetween('orders.created_at', [$startDate, $endDate])
+            ->select(
+                'books.title as titulo',
+                'books.isbn',
+                DB::raw("SUM(CASE WHEN buy_type = 'unit' THEN quantity ELSE 0 END) as unidades_sueltas"),
+                DB::raw("SUM(CASE WHEN buy_type = 'package' THEN quantity ELSE 0 END) as paquetes_vendidos"),
+                DB::raw('SUM(order_items.quantity * order_items.price) as subtotal'),
+                DB::raw('SUM(order_items.discount) as descuentos'),
+                DB::raw('SUM((order_items.quantity * order_items.price) - order_items.discount) as total_neto')
+            )
+            ->groupBy('books.id', 'books.title', 'books.isbn')
+            ->get();
+
+        $totales = [
+            'subtotal_general' => $sales->sum('subtotal'),
+            'descuentos_general' => $sales->sum('descuentos'),
+            'total_general' => $sales->sum('total_neto'),
+            'total_unidades' => $sales->sum('unidades_sueltas'),
+            'total_paquetes' => $sales->sum('paquetes_vendidos'),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'periodo' => $startDate->translatedFormat('F Y'),
+            'data' => $sales,
+            'totales' => $totales
+        ]);
     }
 }
