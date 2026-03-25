@@ -24,6 +24,7 @@ class CatalogController extends Controller
                 'price_unit' => (float)$book->price_unit,
                 'image_url' => $book->image_url,
                 'category' => $book->category,
+                'autor' => $book->autor,
             ];
         });
 

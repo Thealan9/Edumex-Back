@@ -156,7 +156,7 @@ class OrderController extends Controller
             $shippingCost = ($amountAfterDiscount >= 299) ? 0 : 129;
             $finalTotal = $amountAfterDiscount + $shippingCost;
 
-            if ($request->payment_method === 'stripe') {
+            if ($request->payment_method === 'tarjeta') {
                 \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
                 try {
                     $charge = \Stripe\Charge::create([
