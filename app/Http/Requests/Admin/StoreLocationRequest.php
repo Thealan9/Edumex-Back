@@ -22,10 +22,10 @@ class StoreLocationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code'         => 'required|string|max:50|unique:locations,code',
-            'max_capacity' => 'required|integer|min:1',
-            'description'  => 'nullable|string|max:255'
-        ];
+            'code'         => ['required','string','max:50',
+                \Illuminate\Validation\Rule::unique('locations', 'code')->ignore($this->location)
+            ],
+            'max_capacity' => 'required|integer|min:1',];
     }
 
     public function messages(): array

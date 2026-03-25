@@ -13,12 +13,12 @@ class Location extends Model
         return $this->hasMany(Inventory::class);
     }
 
-    /**
-     * Verifica si hay espacio disponible para una cantidad N
-     * Útil para lanzar el Error 409 en el Controlador
-     */
-    public function hasSpaceFor($quantity): bool
+    public function validateSpace($capacity_edit): bool
     {
-        return ($this->current_capacity + $quantity) <= $this->max_capacity;
+        if($this->current_capacity <= $capacity_edit){
+            return false;
+        } else{
+            return true;
+        }
     }
 }

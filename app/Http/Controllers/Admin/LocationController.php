@@ -38,4 +38,27 @@ class LocationController extends Controller
             ], 500);
         }
     }
+
+    public function update(StoreLocationRequest $request, Location $location){
+        try {
+            if(!$location->validateSpace($request->max_capacity)) {
+                $location->update($request->validated());
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Ubicación editada correctamente'
+                ], 201);
+            }else{
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La cantidad debe ser mayor a la cantidad disponible actual',
+                ], 409);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error',
+            ], 500);
+        }
+    }
 }
