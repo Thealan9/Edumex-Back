@@ -11,6 +11,8 @@ use App\Models\Inventory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Addresses;
+use Stripe\Stripe;
+use Stripe\PaymentIntent;
 
 class OrderController extends Controller
 {
@@ -23,6 +25,8 @@ class OrderController extends Controller
             'items.*.buy_type' => 'required|in:unit,package',
             'address_id' => 'required_without:address_data|nullable|exists:addresses,id',
             'address_data' => 'required_without:address_id|nullable|array',
+            'payment_method' => 'required|in:tarjeta,paypal',
+            'payment_id' => 'required|string',
         ]);
 
         return DB::transaction(function () use ($request) {
@@ -76,7 +80,9 @@ class OrderController extends Controller
                 'subtotal'         => 0,
                 'discount'         => 0,
                 'shipping_cost'    => 0,
-                'total'            => 0
+                'total'            => 0,
+                'payment_method'   => $request->payment_method,
+                'payment_id'       => $request->payment_id
             ]);
 
             foreach ($request->items as $item) {
@@ -149,6 +155,27 @@ class OrderController extends Controller
             $amountAfterDiscount = $subtotal - $totalDiscount;
             $shippingCost = ($amountAfterDiscount >= 299) ? 0 : 129;
             $finalTotal = $amountAfterDiscount + $shippingCost;
+
+            if ($request->payment_method === 'stripe') {
+                \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+                try {
+                    $charge = \Stripe\Charge::create([
+                        'amount' => (int)($finalTotal * 100),
+                        'currency' => 'mxn',
+                        'source' => $request->payment_id,
+                        'description' => "Compra de Libros - Usuario ID: " . auth()->id(),
+                    ]);
+
+                    if ($charge->status !== 'succeeded') {
+                        throw new \Exception("El cargo no pudo ser procesado por Stripe.");
+                    }
+
+                } catch (\Stripe\Exception\CardException $e) {
+                    throw new \Exception("Tarjeta rechazada: " . $e->getError()->message);
+                } catch (\Exception $e) {
+                    throw new \Exception("Error al procesar el pago con Stripe: " . $e->getMessage());
+                }
+            }
 
             $order->update([
                 'subtotal'      => $subtotal,
