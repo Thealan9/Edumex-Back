@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('title');
             $table->string('isbn')->unique();
             $table->enum('level', ['A1','A2', 'B1','B2','C1','C2']);
-            $table->decimal('cost', 10, 2); // Costo interno (Admin)
             $table->decimal('price_unit', 10, 2); // Precio venta unidad
             $table->integer('units_per_package')->default(1); // Ejemplo: 10
             $table->decimal('price_package', 10, 2)->nullable(); // Precio venta paquete
