@@ -13,7 +13,8 @@ class PurchaseOrder extends Model
         'supplier_name',
         'status',
         'total_amount',
-        'notes'
+        'notes',
+        'warehouseman_id'
     ];
 
     public function items(): HasMany

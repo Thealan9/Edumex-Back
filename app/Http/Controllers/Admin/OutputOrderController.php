@@ -15,6 +15,7 @@ class OutputOrderController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'warehouseman_id' => 'required|exists:users,id',
             'reason'      => 'required|string',
             'notes'       => 'nullable|string',
             'items'       => 'required|array|min:1',
@@ -28,6 +29,7 @@ class OutputOrderController extends Controller
             $orderNumber = 'SAL-' . date('Ymd') . '-' . strtoupper(Str::random(4));
 
             $order = Output_orders::create([
+                'warehouseman_id' => $request->warehouseman_id,
                 'order_number' => $orderNumber,
                 'reason'       => $request->reason,
                 'notes'        => $request->notes,

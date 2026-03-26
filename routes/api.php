@@ -37,6 +37,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('reports/inventory', [ReportController::class, 'monthlyInventory']);
         Route::get('reports/sales', [ReportController::class, 'salesSummary']);
         Route::get('reports/financial', [ReportController::class, 'getFinancialReport']);
+        Route::get('warehousemen-list', [UserController::class, 'getWarehousemen']);
         Route::post('purchase-orders', [PurchaseOrderController::class, 'store']);
         Route::post('output-orders', [App\Http\Controllers\Admin\OutputOrderController::class, 'store']);
         Route::get('books-locations/{book_id}', [InventoryController::class, 'getLocationsByBook']);

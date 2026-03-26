@@ -103,4 +103,11 @@ class UserController extends Controller
 
         return response()->json(['message' => 'Contraseña actualizada']);
     }
+
+    public function getWarehousemen()
+    {
+        return User::where('role', 'warehouseman')
+            ->where('active', 1)
+            ->get(['id', 'name']);
+    }
 }

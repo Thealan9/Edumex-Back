@@ -28,14 +28,21 @@ class PurchaseOrderController extends Controller
     }
 
     public function store(Request $request) {
+        $request->validate([
+            'warehouseman_id' => 'required|exists:users,id',
+            'supplier_name' => 'required',
+            'items' => 'required|array|min:1'
+        ]);
+
         return DB::transaction(function () use ($request) {
             $po = PurchaseOrder::create([
                 'po_number' => 'OC-' . time(),
                 'admin_id' => auth()->id(),
+                'warehouseman_id' => $request->warehouseman_id,
                 'supplier_name' => $request->supplier_name,
+                'notes' => $request->notes,
                 'status' => 'pending'
             ]);
-
 
             foreach ($request->items as $item) {
                 $po->items()->create([
