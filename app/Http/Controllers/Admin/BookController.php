@@ -11,15 +11,16 @@ class BookController extends Controller
 {
     public function index(Request $request)
     {
-        $books = Book::when($request->search, function ($query, $search) {
-                $query->where('title', 'like', "%{$search}%")
-                    ->orWhere('isbn', $search);
-            })->get();
+        $search = $request->query('search');
 
-        return response()->json([
-            'success' => true,
-            'data' => $books
-        ], 200);
+        $books = Book::when($search, function ($query, $search) {
+            return $query->where('title', 'like', "%{$search}%")
+                ->orWhere('autor', 'like', "%{$search}%"); // <--- ESTO ES LA CLAVE
+        })
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return response()->json($books);
     }
 
     public function store(StoreBookRequest $request)
