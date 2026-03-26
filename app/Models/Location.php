@@ -12,6 +12,10 @@ class Location extends Model
     {
         return $this->hasMany(Inventory::class);
     }
+    public function hasSpaceFor($quantity): bool
+    {
+        return ($this->current_capacity + $quantity) <= $this->max_capacity;
+    }
 
     public function validateSpace($capacity_edit): bool
     {
