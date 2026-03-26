@@ -160,10 +160,20 @@ class InventoryController extends Controller
         ]);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        return InventoryMovement::with(['book', 'user', 'location'])
-            ->latest()
-            ->paginate(20);
+        $query = InventoryMovement::with([
+            'book:id,title',
+            'user:id,name',
+            'location:id,code'
+        ])
+            ->select('id', 'book_id', 'user_id', 'location_id', 'type', 'quantity', 'description', 'reference_id', 'created_at')
+            ->whereDate('created_at', now()->toDateString());
+
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        return $query->latest()->paginate(10);
     }
 }
