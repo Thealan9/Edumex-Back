@@ -14,6 +14,7 @@ class PurchaseOrderController extends Controller
     {
         $orders = PurchaseOrder::with(['items.book'])
             ->where('status', 'pending')
+            ->where('warehouseman_id', auth()->id())
             ->latest()
             ->get();
 

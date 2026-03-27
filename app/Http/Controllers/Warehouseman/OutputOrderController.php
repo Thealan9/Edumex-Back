@@ -12,6 +12,7 @@ class OutputOrderController extends Controller
     {
         $orders = Output_orders::with(['items.book'])
             ->where('status', 'pending')
+            ->where('warehouseman_id', auth()->id())
             ->latest()
             ->get();
 
