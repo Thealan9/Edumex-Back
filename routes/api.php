@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\BookController;
+use App\Http\Controllers\Admin\EbookController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Api\AuthController;
@@ -33,6 +34,9 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::apiResource('locations', LocationController::class);
         Route::apiResource('books', BookController::class);
         Route::post('books/{id}/image', [BookController::class, 'updateImage']);
+        Route::apiResource('ebooks', EbookController::class);
+        Route::patch('ebooks/{ebook}/status', [EbookController::class, 'toggleStatus']);
+
         Route::apiResource('discounts', VolumeDiscountController::class);
         Route::get('reports/inventory', [ReportController::class, 'monthlyInventory']);
         Route::get('reports/sales', [ReportController::class, 'salesSummary']);

@@ -18,7 +18,7 @@ class BookController extends Controller
                 ->orWhere('autor', 'like', "%{$search}%"); // <--- ESTO ES LA CLAVE
         })
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->latest()->paginate(15);
 
         return response()->json($books);
     }
