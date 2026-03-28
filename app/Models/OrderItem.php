@@ -13,6 +13,7 @@ class OrderItem extends Model
         'price',
         'buy_type',
         'discount',
+        'ebook_id'
     ];
 
     public function order()
@@ -23,5 +24,10 @@ class OrderItem extends Model
     public function book()
     {
         return $this->belongsTo(Book::class);
+    }
+
+    public function ebook()
+    {
+        return $this->belongsTo(Ebook::class);
     }
 }

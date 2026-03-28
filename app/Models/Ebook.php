@@ -12,7 +12,7 @@ class Ebook extends Model
     protected $fillable = [
         'title', 'image_path', 'isbn', 'level', 'category',
         'price', 'description', 'autor',
-        'active', 'pages', 'year', 'edition', 'supplier'
+        'active', 'pages', 'year', 'edition', 'supplier','platform'
     ];
 
     public function purchases()

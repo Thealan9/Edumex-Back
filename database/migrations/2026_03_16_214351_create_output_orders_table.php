@@ -18,6 +18,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->enum('status', ['pending', 'processed', 'cancelled'])->default('pending');
             $table->foreignId('created_by')->constrained('users');
+            $table->foreignId('warehouseman_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
     }

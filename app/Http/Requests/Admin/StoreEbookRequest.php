@@ -40,6 +40,7 @@ class StoreEbookRequest extends FormRequest
             'year' => 'required|integer',
             'edition' => 'required|integer|min:1',
             'supplier' => 'required|string',
+            'platform' => 'required|string'
         ];
     }
 }

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
-            $table->foreignId('book_id')->constrained()->onDelete('cascade');
+            $table->foreignId('book_id')->nullable()->constrained()->onDelete('cascade');
 
             $table->integer('quantity'); // Cantidad comprada (ej: 2)
             $table->decimal('price', 10, 2); // Precio unitario o de paquete al momento de la compra

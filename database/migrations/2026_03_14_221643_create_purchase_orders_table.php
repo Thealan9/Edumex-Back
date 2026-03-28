@@ -19,6 +19,7 @@ return new class extends Migration
             $table->enum('status', ['pending', 'received', 'cancelled'])->default('pending');
             $table->decimal('total_amount', 12, 2)->default(0);
             $table->text('notes')->nullable();
+            $table->foreignId('warehouseman_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
     }

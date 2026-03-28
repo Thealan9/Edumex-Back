@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ebook_purchases', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('ebook_id')->constrained('ebook');
-            $table->foreignId('order_id')->constrained()->onDelete('cascade');
-            $table->string('distributor'); // Amazon, Apple, Google
-            $table->string('code'); // El código simulado que verá el usuario
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('ebook_purchases')) {
+            Schema::create('ebook_purchases', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('ebook_id')->constrained('ebook');
+                $table->foreignId('order_id')->constrained()->onDelete('cascade');
+                $table->string('distributor'); // Amazon, Apple, Google
+                $table->string('code'); // El código simulado que verá el usuario
+                $table->timestamps();
+            });
+        }
     }
 
     /**

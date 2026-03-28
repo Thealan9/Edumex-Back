@@ -9,9 +9,10 @@ class EbookPurchase extends Model
 {
     protected $fillable = [
         'ebook_id',
-        'ticket_detail_id',
+        'order_id',
         'distributor',
-        'generated_code'
+        'code',
+        'platform'
     ];
 
     public function ebook()

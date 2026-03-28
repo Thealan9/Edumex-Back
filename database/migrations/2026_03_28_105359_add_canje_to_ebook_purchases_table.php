@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('output_orders', function (Blueprint $table) {
-            $table->foreignId('warehouseman_id')->nullable()->constrained('users')->onDelete('set null');
+        Schema::table('ebook_purchases', function (Blueprint $table) {
+            $table->string('platform')->after('code')->default('Amazon Kindle');
         });
     }
 
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('output_orders', function (Blueprint $table) {
+        Schema::table('ebook_purchases', function (Blueprint $table) {
             //
         });
     }
