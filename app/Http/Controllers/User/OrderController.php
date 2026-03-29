@@ -41,7 +41,7 @@ class OrderController extends Controller
             }
 
             $shippingDetails = null;
-            if ($hasPhysical || $request->address_id || $request->address_data) {
+            if ($hasPhysical && ($request->address_id || $request->address_data)) {
                 if ($request->address_id) {
                     $address = Addresses::where('user_id', $user->id)->findOrFail($request->address_id);
                 } else {

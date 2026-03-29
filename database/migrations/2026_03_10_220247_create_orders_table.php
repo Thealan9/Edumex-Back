@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->json('shipping_details');
+            $table->json('shipping_details')->nullable();
             $table->string('status')->default('paid'); // pending, completed, cancelled
             $table->decimal('total', 10, 2);
             $table->string('tracking_number')->nullable();
