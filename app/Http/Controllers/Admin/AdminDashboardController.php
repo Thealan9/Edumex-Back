@@ -63,18 +63,23 @@ class AdminDashboardController extends Controller
             ->whereRaw('(SELECT COALESCE(SUM(quantity), 0) FROM inventories WHERE inventories.book_id = books.id) <= stock_alert')
             ->get();
 
-        $physicalToday = DB::table('order_items')
+        $physicalStatsToday = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->whereNotNull('order_items.book_id')
             ->where('orders.status', 'paid')
             ->whereDate('orders.created_at', $today)
-            ->sum('order_items.quantity');
+            ->select(
+                DB::raw('SUM(CASE WHEN buy_type = "unit" THEN quantity ELSE 0 END) as individual_count'),
+                DB::raw('SUM(CASE WHEN buy_type = "package" THEN quantity ELSE 0 END) as package_count')
+            )
+            ->first();
 
         return response()->json([
             'stats' => [
                 'today_sales' => (float) Order::whereDate('created_at', $today)->sum('total'),
                 'ebooks_count_today' => EbookPurchase::whereDate('created_at', $today)->count(),
-                'books_count_today' => (int) $physicalToday,
+                'individual_books_today' => (int) ($physicalStatsToday->individual_count ?? 0),
+                'packages_today' => (int) ($physicalStatsToday->package_count ?? 0),
                 'critical_stock_count' => $lowStock->count(),
                 'total_discounts_applied' => (float) Order::whereDate('created_at', $today)->sum('discount'),
             ],
