@@ -45,6 +45,10 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::post('purchase-orders', [PurchaseOrderController::class, 'store']);
         Route::post('output-orders', [App\Http\Controllers\Admin\OutputOrderController::class, 'store']);
         Route::get('books-locations/{book_id}', [InventoryController::class, 'getLocationsByBook']);
+
+        Route::get('dashboard-stats', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'getStats']);
+
+
     });
 
     Route::prefix('warehouseman')->middleware('role:warehouseman')->group(function () {
