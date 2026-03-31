@@ -12,8 +12,7 @@ class UserController extends Controller
     public function index()
     {
         return response()->json(
-            User::select('id', 'name', 'last_name', 'email', 'role', 'customer_type', 'tax_id', 'active', 'created_at')
-                ->orderBy('created_at', 'desc')
+            User::orderBy('created_at', 'desc')
                 ->get()
         );
     }
@@ -27,25 +26,31 @@ class UserController extends Controller
             'password'      => 'required|min:8',
             'role'          => 'required|in:admin,user,warehouseman',
             'customer_type' => 'required|in:individual,institutional',
-            'tax_id'        => 'nullable|string|unique:users,tax_id',
-            'active'        => 'boolean'
+            'active'        => 'boolean',
+            'phone'         => 'required|string|max:10',
+
+            'institution_name' => 'required_if:customer_type,institutional|nullable|string|max:255',
+            'tax_id'           => 'required_if:customer_type,institutional|nullable|string|unique:users,tax_id|max:12',
+            'address'          => 'required_if:customer_type,institutional|nullable|string',
+            'postal_code'      => 'required_if:customer_type,institutional|nullable|string|max:10',
         ]);
 
         $user = User::create([
-            'name'          => $data['name'],
-            'last_name'     => $data['last_name'],
-            'email'         => $data['email'],
-            'password'      => Hash::make($data['password']),
-            'role'          => $data['role'],
-            'customer_type' => $data['customer_type'],
-            'tax_id'        => $data['tax_id'],
-            'active'        => $data['active'] ?? true,
+            'name'             => $data['name'],
+            'last_name'        => $data['last_name'],
+            'email'            => $data['email'],
+            'password'         => Hash::make($data['password']),
+            'role'             => $data['role'],
+            'customer_type'    => $data['customer_type'],
+            'institution_name' => $data['institution_name'] ?? null,
+            'tax_id'           => $data['tax_id'] ?? null,
+            'phone'            => $data['phone'],
+            'address'          => $data['address'] ?? null,
+            'postal_code'      => $data['postal_code'] ?? null,
+            'active'           => $data['active'] ?? true,
         ]);
 
-        return response()->json([
-            'message' => 'Usuario creado correctamente',
-            'user' => $user
-        ], 201);
+        return response()->json(['message' => 'Usuario registrado', 'user' => $user], 201);
     }
 
     public function update(Request $request, User $user)
