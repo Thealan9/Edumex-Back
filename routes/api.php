@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [UserController::class, 'store']);
 Route::get('catalog', [App\Http\Controllers\User\CatalogController::class, 'index']);
 Route::get('catalog/{id}', [App\Http\Controllers\User\CatalogController::class, 'show']);
 
