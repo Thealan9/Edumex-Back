@@ -64,6 +64,7 @@ class ReportController extends Controller
 
         return response()->json(['success' => true, 'data' => $sales]);
     }
+
     public function getFinancialReport(Request $request)
     {
         $month = $request->query('month', date('m'));
@@ -71,56 +72,94 @@ class ReportController extends Controller
         $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
+        $latestCosts = DB::table('purchase_order_items')
+            ->select('book_id', DB::raw('unit_cost as ultimo_costo'))
+            ->whereIn('id', function($query) use ($endDate) {
+                $query->select(DB::raw('MAX(id)'))
+                    ->from('purchase_order_items')
+                    ->where('created_at', '<=', $endDate)
+                    ->groupBy('book_id');
+            });
+
         $sales = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->leftJoin('books', 'order_items.book_id', '=', 'books.id')
             ->leftJoin('ebooks', 'order_items.ebook_id', '=', 'ebooks.id')
+            ->leftJoinSub($latestCosts, 'costos', function ($join) {
+                $join->on('books.id', '=', 'costos.book_id');
+            })
             ->where('orders.status', 'paid')
             ->whereBetween('orders.created_at', [$startDate, $endDate])
             ->select(
-                'books.id as book_id',
                 DB::raw("COALESCE(books.title, ebooks.title) as titulo"),
                 DB::raw("COALESCE(books.isbn, ebooks.isbn) as isbn"),
-                DB::raw("SUM(CASE WHEN order_items.book_id IS NOT NULL THEN order_items.quantity ELSE 0 END) as unidades_fisicas"),
+
+                DB::raw("SUM(CASE
+                WHEN order_items.book_id IS NOT NULL AND order_items.buy_type = 'package' THEN order_items.quantity * books.units_per_package
+                WHEN order_items.book_id IS NOT NULL THEN order_items.quantity
+                ELSE 0
+            END) as unidades_fisicas"),
+
                 DB::raw("SUM(CASE WHEN order_items.ebook_id IS NOT NULL THEN order_items.quantity ELSE 0 END) as unidades_digitales"),
+                DB::raw('SUM(order_items.quantity * order_items.price) as venta_bruta'),
+                DB::raw('SUM(order_items.discount) as descuentos_item'),
                 DB::raw('SUM((order_items.quantity * order_items.price) - order_items.discount) as total_neto'),
-                // Nueva lógica: 20% si es ebook, 100% si es físico (el costo se resta al final)
+
                 DB::raw('SUM(CASE
                 WHEN order_items.ebook_id IS NOT NULL THEN ((order_items.quantity * order_items.price) - order_items.discount) * 0.20
-                ELSE ((order_items.quantity * order_items.price) - order_items.discount)
+                ELSE ((order_items.quantity * order_items.price) - order_items.discount) - (
+                    CASE
+                        WHEN order_items.buy_type = "package" THEN (order_items.quantity * books.units_per_package)
+                        ELSE order_items.quantity
+                    END * COALESCE(costos.ultimo_costo, 0)
+                )
             END) as ganancia_bruta_item')
             )
-            ->groupBy('books.id', 'titulo', 'isbn')
+            ->groupBy('titulo', 'isbn', 'costos.ultimo_costo')
             ->get();
 
-        // Inversión en libros físicos (Compras recibidas este mes)
-        $costosInversion = DB::table('purchase_order_items')
+        $inversionMes = DB::table('purchase_order_items')
             ->join('purchase_orders', 'purchase_order_items.purchase_order_id', '=', 'purchase_orders.id')
             ->whereBetween('purchase_orders.created_at', [$startDate, $endDate])
             ->where('purchase_orders.status', 'received')
             ->sum(DB::raw('purchase_order_items.quantity * purchase_order_items.unit_cost'));
 
         $ingresosNetos = $sales->sum('total_neto');
-        $gananciaEbooks = $sales->sum(function($item) {
-            return $item->unidades_digitales > 0 ? $item->ganancia_bruta_item : 0;
-        });
+        $utilidadTotal = $sales->sum('ganancia_bruta_item');
 
-        // Utilidad Final = (Ganancia de Ebooks 20%) + (Ingreso Físico - Costo de Compra)
-        $utilidadReal = $gananciaEbooks + ($sales->where('unidades_fisicas', '>', 0)->sum('total_neto') - $costosInversion);
+        $recuperacion = 0;
+        if ($inversionMes > 0) {
+            $recuperacion = ($ingresosNetos / $inversionMes) * 100;
+        }
+
+        $inversionHistorica = DB::table('purchase_order_items')
+            ->join('purchase_orders', 'purchase_order_items.purchase_order_id', '=', 'purchase_orders.id')
+            ->where('purchase_orders.status', 'received')
+            ->sum(DB::raw('purchase_order_items.quantity * purchase_order_items.unit_cost'));
+
+        $ingresosHistoricos = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->where('orders.status', 'paid')
+            ->sum(DB::raw('(order_items.quantity * order_items.price) - order_items.discount'));
+
+        $saldoPendienteGlobal = $inversionHistorica - $ingresosHistoricos;
 
         Carbon::setLocale('es');
-        $periodo = $startDate->translatedFormat('F Y');
-
         return response()->json([
             'success' => true,
-            'periodo' => ucfirst($periodo),
+            'periodo' => ucfirst($startDate->translatedFormat('F Y')),
             'data' => $sales,
             'totales' => [
+                'venta_bruta' => (float)$sales->sum('venta_bruta'),
+                'descuentos_totales' => (float)$sales->sum('descuentos_item'),
                 'ingresos_totales' => (float)$ingresosNetos,
-                'inversion_compras' => (float)$costosInversion,
-                'ganancia_ebooks' => (float)$gananciaEbooks,
-                'utilidad_neta' => (float)$utilidadReal,
-                'porcentaje_rentabilidad' => $ingresosNetos > 0 ? ($utilidadReal / $ingresosNetos) * 100 : 0
+                'inversion_compras' => (float)$inversionMes,
+                'ganancia_ebooks' => (float)$sales->where('unidades_digitales', '>', 0)->sum('ganancia_bruta_item'),
+                'utilidad_neta' => (float)$utilidadTotal,
+                'porcentaje_rentabilidad' => $ingresosNetos > 0 ? ($utilidadTotal / $ingresosNetos) * 100 : 0,
+                'porcentaje_recuperacion' => (float)$recuperacion,
+                'saldo_pendiente_global' => (float)$saldoPendienteGlobal
             ]
         ]);
-    }}
+    }
+}
