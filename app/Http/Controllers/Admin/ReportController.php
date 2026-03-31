@@ -72,6 +72,8 @@ class ReportController extends Controller
         $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
+        $validOrderStatuses = ['paid', 'shipped', 'in_transit', 'delivered'];
+
         $latestCosts = DB::table('purchase_order_items')
             ->select('book_id', DB::raw('unit_cost as ultimo_costo'))
             ->whereIn('id', function($query) use ($endDate) {
@@ -86,36 +88,38 @@ class ReportController extends Controller
             ->leftJoin('books', 'order_items.book_id', '=', 'books.id')
             ->leftJoin('ebooks', 'order_items.ebook_id', '=', 'ebooks.id')
             ->leftJoinSub($latestCosts, 'costos', function ($join) {
-                $join->on('books.id', '=', 'costos.book_id');
+                $join->on('order_items.book_id', '=', 'costos.book_id');
             })
-            ->where('orders.status', 'paid')
+            ->whereIn('orders.status', $validOrderStatuses)
             ->whereBetween('orders.created_at', [$startDate, $endDate])
             ->select(
-                DB::raw("COALESCE(books.title, ebooks.title) as titulo"),
-                DB::raw("COALESCE(books.isbn, ebooks.isbn) as isbn"),
+                DB::raw("MAX(COALESCE(books.title, ebooks.title)) as titulo"),
+                DB::raw("MAX(COALESCE(books.isbn, ebooks.isbn)) as isbn"),
 
                 DB::raw("SUM(CASE
-                WHEN order_items.book_id IS NOT NULL AND order_items.buy_type = 'package' THEN order_items.quantity * books.units_per_package
+                WHEN order_items.book_id IS NOT NULL AND order_items.buy_type = 'package' THEN order_items.quantity * COALESCE(books.units_per_package, 1)
                 WHEN order_items.book_id IS NOT NULL THEN order_items.quantity
                 ELSE 0
             END) as unidades_fisicas"),
 
                 DB::raw("SUM(CASE WHEN order_items.ebook_id IS NOT NULL THEN order_items.quantity ELSE 0 END) as unidades_digitales"),
                 DB::raw('SUM(order_items.quantity * order_items.price) as venta_bruta'),
-                DB::raw('SUM(order_items.discount) as descuentos_item'),
-                DB::raw('SUM((order_items.quantity * order_items.price) - order_items.discount) as total_neto'),
+                DB::raw('SUM(COALESCE(order_items.discount, 0)) as descuentos_item'),
+                DB::raw('SUM((order_items.quantity * order_items.price) - COALESCE(order_items.discount, 0)) as total_neto'),
 
                 DB::raw('SUM(CASE
-                WHEN order_items.ebook_id IS NOT NULL THEN ((order_items.quantity * order_items.price) - order_items.discount) * 0.20
-                ELSE ((order_items.quantity * order_items.price) - order_items.discount) - (
-                    CASE
-                        WHEN order_items.buy_type = "package" THEN (order_items.quantity * books.units_per_package)
-                        ELSE order_items.quantity
-                    END * COALESCE(costos.ultimo_costo, 0)
-                )
+                WHEN order_items.ebook_id IS NOT NULL
+                    THEN ((order_items.quantity * order_items.price) - COALESCE(order_items.discount, 0)) * 0.20
+                ELSE
+                    ((order_items.quantity * order_items.price) - COALESCE(order_items.discount, 0)) - (
+                        CASE
+                            WHEN order_items.buy_type = "package" THEN (order_items.quantity * COALESCE(books.units_per_package, 1))
+                            ELSE order_items.quantity
+                        END * COALESCE(costos.ultimo_costo, 0)
+                    )
             END) as ganancia_bruta_item')
             )
-            ->groupBy('titulo', 'isbn', 'costos.ultimo_costo')
+            ->groupBy('order_items.book_id', 'order_items.ebook_id')
             ->get();
 
         $inversionMes = DB::table('purchase_order_items')
@@ -139,8 +143,8 @@ class ReportController extends Controller
 
         $ingresosHistoricos = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->where('orders.status', 'paid')
-            ->sum(DB::raw('(order_items.quantity * order_items.price) - order_items.discount'));
+            ->whereIn('orders.status', $validOrderStatuses)
+            ->sum(DB::raw('(order_items.quantity * order_items.price) - COALESCE(order_items.discount, 0)'));
 
         $saldoPendienteGlobal = $inversionHistorica - $ingresosHistoricos;
 
@@ -154,7 +158,9 @@ class ReportController extends Controller
                 'descuentos_totales' => (float)$sales->sum('descuentos_item'),
                 'ingresos_totales' => (float)$ingresosNetos,
                 'inversion_compras' => (float)$inversionMes,
-                'ganancia_ebooks' => (float)$sales->where('unidades_digitales', '>', 0)->sum('ganancia_bruta_item'),
+                'ganancia_ebooks' => (float)$sales->sum(function($item) {
+                    return $item->unidades_digitales > 0 ? $item->ganancia_bruta_item : 0;
+                }),
                 'utilidad_neta' => (float)$utilidadTotal,
                 'porcentaje_rentabilidad' => $ingresosNetos > 0 ? ($utilidadTotal / $ingresosNetos) * 100 : 0,
                 'porcentaje_recuperacion' => (float)$recuperacion,
