@@ -37,6 +37,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::post('books/{id}/image', [BookController::class, 'updateImage']);
         Route::apiResource('ebooks', EbookController::class);
         Route::patch('ebooks/{ebook}/status', [EbookController::class, 'toggleStatus']);
+        Route::patch('books/{book}/status', [BookController::class, 'toggleStatus']);
 
         Route::apiResource('discounts', VolumeDiscountController::class);
         Route::get('reports/inventory', [ReportController::class, 'monthlyInventory']);

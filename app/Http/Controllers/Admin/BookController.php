@@ -26,7 +26,13 @@ class BookController extends Controller
     public function store(StoreBookRequest $request)
     {
         try {
-            $book = Book::create($request->validated());
+            $data = $request->validated();
+
+            if ($request->hasFile('image')) {
+                $data['image_path'] = $request->file('image')->store('books', 'public');
+            }
+
+            $book = Book::create($data);
 
             return response()->json([
                 'success' => true,
@@ -62,7 +68,15 @@ class BookController extends Controller
 
     public function update(StoreBookRequest $request, Book $book)
     {
-        $book->update($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('image')) {
+            if ($ebook->image_path) {
+                Storage::disk('public')->delete($ebook->image_path);
+            }
+            $data['image_path'] = $request->file('image')->store('books', 'public');
+        }
+        $book->update($data);
 
         return response()->json([
             'success' => true,
@@ -93,5 +107,11 @@ class BookController extends Controller
         }
 
         return response()->json(['success' => false], 400);
+    }
+
+    public function toggleStatus(Book $book)
+    {
+        $book->update(['active' => !$book->active]);
+        return response()->json(['message' => 'Estado actualizado']);
     }
 }
