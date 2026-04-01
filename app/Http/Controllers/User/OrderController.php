@@ -144,7 +144,7 @@ class OrderController extends Controller
                 $itemSubtotal = $unitPrice * $item['quantity'];
                 $itemDiscount = 0;
 
-                if ($item['buy_type'] === 'unit') {
+                if ($item['buy_type'] === 'unit' && $item['type'] === 'physical') {
                     $applicable = $discounts->first(function ($d) use ($item) {
                         return $item['quantity'] >= $d->min_quantity && (is_null($d->max_quantity) || $item['quantity'] <= $d->max_quantity);
                     });
