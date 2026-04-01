@@ -6,6 +6,7 @@ use App\Models\Book;
 use App\Http\Requests\Admin\StoreBookRequest;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Storage;
 
 class BookController extends Controller
 {
@@ -71,8 +72,8 @@ class BookController extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('image')) {
-            if ($ebook->image_path) {
-                Storage::disk('public')->delete($ebook->image_path);
+            if ($book->image_path) {
+                Storage::disk('public')->delete($book->image_path);
             }
             $data['image_path'] = $request->file('image')->store('books', 'public');
         }

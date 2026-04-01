@@ -13,7 +13,7 @@ class Book extends Model
         'title', 'isbn', 'level', 'price_unit',
         'units_per_package', 'price_package', 'stock_alert',
         'autor', 'active', 'pages', 'year', 'edition',
-        'format', 'size', 'supplier','description','category'
+        'format', 'size', 'supplier','description','category','image_path'
     ];
 
     // Relación con el Kardex
