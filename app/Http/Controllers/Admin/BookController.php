@@ -115,4 +115,13 @@ class BookController extends Controller
         $book->update(['active' => !$book->active]);
         return response()->json(['message' => 'Estado actualizado']);
     }
+
+    public function nameBooks()
+    {
+        $books = Book::select('id', 'title', 'image_path')
+            ->withSum('inventories', 'quantity')
+            ->get();
+
+        return response()->json($books);
+    }
 }

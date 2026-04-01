@@ -31,6 +31,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::apiResource('users', UserController::class);
         Route::patch('/users/{user}/toggle-active', [UserController::class, 'toggleActive']);
         Route::put('/users/{user}/change-password', [UserController::class, 'changePassword']);
+        Route::get('books/nameBooks', [BookController::class, 'nameBooks']);
 
         Route::apiResource('locations', LocationController::class);
         Route::apiResource('books', BookController::class);
