@@ -13,9 +13,13 @@ class OrderItem extends Model
         'price',
         'buy_type',
         'discount',
-        'ebook_id'
+        'ebook_id',
+        'picking_locations'
     ];
 
+    protected $casts = [
+        'picking_locations' => 'array',
+    ];
     public function order()
     {
         return $this->belongsTo(Order::class);

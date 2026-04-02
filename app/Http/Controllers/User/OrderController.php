@@ -95,6 +95,8 @@ class OrderController extends Controller
                 ->get();
 
             foreach ($request->items as $item) {
+                $pickingData = null;
+
                 if ($item['type'] === 'ebook') {
                     $book = \App\Models\Ebook::findOrFail($item['id']);
                     $unitPrice = $book->price;
@@ -117,12 +119,14 @@ class OrderController extends Controller
                     $unitPrice = ($item['buy_type'] === 'package') ? $book->price_package : $book->price_unit;
                     $unitsToSubtract = ($item['buy_type'] === 'package') ? ($item['quantity'] * ($book->units_per_package ?? 1)) : $item['quantity'];
 
-                    $inventories = Inventory::where('book_id', $book->id)->where('quantity', '>', 0)->orderBy('quantity', 'asc')->get();
+                    $inventories = Inventory::with('location')->where('book_id', $book->id)->where('quantity', '>', 0)->orderBy('quantity', 'asc')->get();
                     if ($inventories->sum('quantity') < $unitsToSubtract) {
                         throw new \Exception("Stock insuficiente para: {$book->title}.");
                     }
 
                     $pending = $unitsToSubtract;
+                    $pickingData = [];
+
                     foreach ($inventories as $inv) {
                         if ($pending <= 0) break;
                         $take = min($inv->quantity, $pending);
@@ -137,6 +141,13 @@ class OrderController extends Controller
                             'quantity' => $take,
                             'description' => "Venta Orden #{$order->id}"
                         ]);
+
+                        $pickingData[] = [
+                            'location_id' => $inv->location_id,
+                            'location_code' => $inv->location->code ?? 'Desconocida',
+                            'quantity_to_pick' => $take
+                        ];
+
                         $pending -= $take;
                     }
                 }
@@ -160,7 +171,8 @@ class OrderController extends Controller
                     'quantity' => $item['quantity'],
                     'price'    => $unitPrice,
                     'discount' => $itemDiscount,
-                    'buy_type' => $item['buy_type']
+                    'buy_type' => $item['buy_type'],
+                    'picking_locations' => $pickingData
                 ]);
 
                 $subtotal += $itemSubtotal;
@@ -207,12 +219,17 @@ class OrderController extends Controller
     }
     public function pendingDespatch()
     {
-        return Order::where('status', 'paid')
+        return Order::select('id')
+            ->where('status', 'paid')
             ->whereHas('items', function ($query) {
                 $query->whereNotNull('book_id');
             })
             ->with(['items' => function ($query) {
-                $query->whereNotNull('book_id')->with('book');
+                $query->select('id', 'order_id', 'book_id', 'quantity', 'buy_type', 'picking_locations')
+                    ->whereNotNull('book_id')
+                    ->with(['book' => function ($bookQuery) {
+                        $bookQuery->select('id', 'title','units_per_package');
+                    }]);
             }])
             ->orderBy('created_at', 'asc')
             ->get();
