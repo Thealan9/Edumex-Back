@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Addresses;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderConfirmationMail;
 
 class OrderController extends Controller
 {
@@ -203,6 +205,16 @@ class OrderController extends Controller
             if (!$hasPhysical) {
                 $order->update(['status' => 'delivered']);
             }
+
+            try {
+                $order->load('user');
+                Mail::to($user->email)->send(new OrderConfirmationMail($order));
+            } catch (\Exception $e) {
+                // Capturamos el error para que si el correo falla,
+                // no se cancele la transacción ni el pago del cliente
+                \Log::error('Error al enviar correo de orden #' . $order->id . ': ' . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => '¡Compra procesada con éxito!',

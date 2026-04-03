@@ -25,4 +25,8 @@ class Order extends Model
     {
         return $this->hasMany(EbookPurchase::class);
     }
+
+    public function user() {
+        return $this->belongsTo(User::class);
+    }
 }
