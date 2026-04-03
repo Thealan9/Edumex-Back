@@ -19,7 +19,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [UserController::class, 'store']);
 Route::get('catalog', [App\Http\Controllers\User\CatalogController::class, 'index']);
 Route::get('catalog/{id}', [App\Http\Controllers\User\CatalogController::class, 'show']);
-
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
