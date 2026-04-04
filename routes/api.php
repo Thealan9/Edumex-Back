@@ -56,7 +56,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     });
 
     Route::prefix('warehouseman')->middleware('role:warehouseman')->group(function () {
-        Route::get('books', [BookController::class, 'index']);
+        Route::get('books/find-for-movement/{id}', [BookController::class, 'findForMovement']);
         Route::get('locations', [LocationController::class, 'index']);
 
         Route::post('inventory/move', [InventoryController::class, 'store']);

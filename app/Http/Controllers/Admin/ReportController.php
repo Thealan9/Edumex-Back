@@ -17,7 +17,7 @@ class ReportController extends Controller
         $endDate = $startDate->copy()->endOfMonth();
 
         // Obtener libros físicos
-        $booksReport = Book::all()->map(function($book) use ($startDate, $endDate) {
+        $booksReport = Book::withTrashed()->get()->map(function($book) use ($startDate, $endDate) {
             $stockInicial = $book->movements()
                 ->where('created_at', '<', $startDate)
                 ->selectRaw("SUM(CASE WHEN type IN ('input', 'return') THEN quantity ELSE -quantity END) as total")

@@ -24,6 +24,18 @@ class BookController extends Controller
         return response()->json($books);
     }
 
+    public function findForMovement($id)
+    {
+        $book = Book::withTrashed()->find($id);
+
+        if (!$book) {
+            return response()->json(['message' => 'Libro no encontrado'], 404);
+        }
+
+        return response()->json($book);
+    }
+
+
     public function store(StoreBookRequest $request)
     {
         try {
@@ -118,10 +130,13 @@ class BookController extends Controller
 
     public function nameBooks()
     {
-        $books = Book::select('id', 'title', 'image_path')
+        $books = Book::withTrashed()
+            ->select('id', 'title', 'image_path')
             ->withSum('inventories', 'quantity')
             ->get();
 
         return response()->json($books);
     }
+
+
 }
