@@ -6,8 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Location extends Model
 {
-    protected $fillable = ['code', 'max_capacity', 'current_capacity'];
+    protected $fillable = ['code', 'max_capacity', 'current_capacity','active'];
 
+    protected $casts = [
+        'active' => 'boolean',
+    ];
     public function inventories()
     {
         return $this->hasMany(Inventory::class);
