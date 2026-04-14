@@ -19,7 +19,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [UserController::class, 'store']);
 Route::get('catalog', [App\Http\Controllers\User\CatalogController::class, 'index']);
 Route::get('catalog/{id}', [App\Http\Controllers\User\CatalogController::class, 'show']);
-
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
@@ -55,7 +56,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     });
 
     Route::prefix('warehouseman')->middleware('role:warehouseman')->group(function () {
-        Route::get('books', [BookController::class, 'index']);
+        Route::get('books/find-for-movement/{id}', [BookController::class, 'findForMovement']);
         Route::get('locations', [LocationController::class, 'index']);
 
         Route::post('inventory/move', [InventoryController::class, 'store']);

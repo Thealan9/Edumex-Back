@@ -60,7 +60,15 @@ class UserController extends Controller
             'last_name'     => 'required|string|max:255',
             'email'         => 'required|email|unique:users,email,' . $user->id,
             'role'          => 'required|in:admin,user,warehouseman',
-            'tax_id'        => 'nullable|string|unique:users,tax_id,' . $user->id,
+            'customer_type' => 'required|in:individual,institutional',
+            'active'        => 'boolean',
+            'phone'         => 'required|string|max:10',
+
+            'institution_name' => 'required_if:customer_type,institutional|nullable|string|max:255',
+            'tax_id'           => 'required_if:customer_type,institutional|nullable|string|max:12|unique:users,tax_id,' . $user->id,
+            'address'          => 'required_if:customer_type,institutional|nullable|string',
+            'postal_code'      => 'required_if:customer_type,institutional|nullable|string|max:10',
+
         ]);
 
         $user->update($data);

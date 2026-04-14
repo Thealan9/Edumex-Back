@@ -25,7 +25,8 @@ class StoreLocationRequest extends FormRequest
             'code'         => ['required','string','max:50',
                 \Illuminate\Validation\Rule::unique('locations', 'code')->ignore($this->location)
             ],
-            'max_capacity' => 'required|integer|min:1',];
+            'max_capacity' => 'required|integer|min:1',
+            'active'       => 'boolean'];
     }
 
     public function messages(): array

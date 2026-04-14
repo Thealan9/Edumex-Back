@@ -170,6 +170,10 @@ class InventoryController extends Controller
             ->select('id', 'book_id', 'user_id', 'location_id', 'type', 'quantity', 'description', 'reference_id', 'created_at')
             ->whereDate('created_at', now()->toDateString());
 
+        $query->whereHas('user', function ($q) {
+            $q->where('role', 'warehouseman');
+        });
+
         if ($request->has('user_id')) {
             $query->where('user_id', $request->user_id);
         }

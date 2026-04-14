@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Book;
 use App\Http\Requests\Admin\StoreBookRequest;
-use App\Models\Ebook;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Storage;
@@ -124,11 +123,5 @@ class BookController extends Controller
             ->get();
 
         return response()->json($books);
-    }
-
-    public function destroy(Book $book)
-    {
-        $book->delete();
-        return response()->json(['message' => 'Book enviado a papelera']);
     }
 }
