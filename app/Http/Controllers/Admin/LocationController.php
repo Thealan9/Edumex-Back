@@ -61,4 +61,11 @@ class LocationController extends Controller
             ], 500);
         }
     }
+
+
+    public function destroy(Location $location)
+    {
+        $location->delete();
+        return response()->json(['message' => 'Ubicación eliminada']);
+    }
 }
